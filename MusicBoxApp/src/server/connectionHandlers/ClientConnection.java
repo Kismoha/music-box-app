@@ -25,7 +25,7 @@ public class ClientConnection implements AutoCloseable {
     private final Socket client;
     private final ObjectOutputStream out;
     private final ObjectInputStream in;
-    private final LinkedList<String> messages;
+    private final LinkedList<Message> messages;
     private Thread incoming;
     private Thread outgoing;
     private boolean isClientActive;
@@ -42,19 +42,22 @@ public class ClientConnection implements AutoCloseable {
     public void startCommunication() {
         incoming = new Thread(() -> {
             isClientActive = true;
-            while (client.isConnected()) {
+            boolean running = true;
+            while (running) {
                 Message inMsg = new Message();
                 try {
                     inMsg = (Message) in.readObject();
                 } catch (IOException ex) {
                     System.out.println("Communication problem");
+                    running = false;
                 } catch (ClassNotFoundException ex) {
                     System.out.println("Message problem");
+                    running = false;
                 }
                 final Message outMsg = new Message(inMsg);
                 mgr.forEachConn((ClientConnection c) -> {
                     synchronized (c.messages) {
-                        c.messages.add(outMsg.getType() + " - " + outMsg.getType());
+                        c.messages.add(outMsg);
                         c.messages.notifyAll();
                     }
                 });
@@ -90,17 +93,19 @@ public class ClientConnection implements AutoCloseable {
                     } catch (InterruptedException ex) {
                         System.out.println("wait Interrupted");
                     }
-                    while (!messages.isEmpty() && client.isConnected()) {
+                    while (!messages.isEmpty() && isClientActive) {
                         try {
                             out.writeObject(messages.getFirst());
                             out.flush();
                             messages.removeFirst();
                         } catch (IOException ex) {
                             System.out.println("Exception while trying to write to client");
+                            isClientActive = false;
                         }
                     }
                 }
             }
+            System.out.println("out thread end");
         });
         outgoing.start();
     }

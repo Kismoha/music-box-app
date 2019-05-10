@@ -5,26 +5,30 @@
  */
 package messages;
 
+import java.io.Serializable;
+
 /**
  *
  * @author kismo
  */
-public class Message {
-    
+public class Message implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+
     private String type;
     private String content;
-    
-    public Message(String type, String content){
+
+    public Message(String type, String content) {
         this.type = type;
         this.content = content;
     }
-    
-    public Message(){
+
+    public Message() {
         this.type = "TYPE";
         this.content = "CONTENT";
     }
-    
-    public Message(Message msg){
+
+    public Message(Message msg) {
         this.type = msg.getType();
         this.content = msg.getContent();
     }
@@ -36,7 +40,7 @@ public class Message {
     public String getContent() {
         return content;
     }
-    
+
     public void setType(String type) {
         this.type = type;
     }
