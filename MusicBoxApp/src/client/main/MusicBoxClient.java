@@ -10,8 +10,6 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.util.Scanner;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import messages.Message;
 import server.main.MusicBox;
 
@@ -24,26 +22,31 @@ public class MusicBoxClient implements AutoCloseable {
     private Socket me;
     private ObjectOutputStream out;
     private ObjectInputStream in;
+    private final Scanner sysIn;
     private Thread toServer;
     private Thread fromServer;
 
     public MusicBoxClient() throws IOException, InterruptedException, Exception {
+        sysIn = new Scanner(System.in);
         createSocket();
         createStreams();
         start();
     }
 
-    public void start() throws InterruptedException, Exception {
+    private void start() throws InterruptedException, Exception {
+        ///////////////////// TOSERVER ////////////////////////
+        ///////////////////////////////////////////////////////
         toServer = new Thread(() -> {
             boolean running = true;
-            try (Scanner sysIn = new Scanner(System.in)) {
+            try{
                 while (running) {
-                    Message msg = new Message();
-                    System.out.println("Command:");
-                    msg.setType(sysIn.next());
-                    System.out.println("Content:");
-                    msg.setContent(sysIn.next());
-
+                    
+                    Message msg;
+                    do{
+                        System.out.println("Command:");
+                        msg = commandHandler(sysIn.next());
+                    }while(msg.getType().equals("TYPE"));
+                    
                     if (msg.getType().equals("exit")) {
                         running = false;
                         break;
@@ -60,14 +63,17 @@ public class MusicBoxClient implements AutoCloseable {
                 running = false;
             }
         });
-
+        ///////////////////////////////////////////////////////
+        ///////////////////// TOSERVER ////////////////////////
+        
+        ////////////// FROMSERVER ////////////////////////
+        //////////////////////////////////////////////////
         fromServer = new Thread(() -> {
             boolean running = true;
             while (running) {
                 try {
                     Message msg = (Message) in.readObject();
-                    System.out.println("Üzenet: " + msg.getType() + " "
-                            + msg.getContent());
+                    System.out.println(msg.toString());
                 } catch (IOException ex) {
                     System.out.println("IOException while reading from server");
                     running = false;
@@ -80,6 +86,8 @@ public class MusicBoxClient implements AutoCloseable {
                 }
             }
         });
+        //////////////////////////////////////////////////
+        ////////////// FROMSERVER ////////////////////////
 
         toServer.start();
         fromServer.start();
@@ -98,12 +106,87 @@ public class MusicBoxClient implements AutoCloseable {
         out = new ObjectOutputStream(me.getOutputStream());
         in = new ObjectInputStream(me.getInputStream());
     }
+    
+    private Message commandHandler(String command) {
+        Message msg = new Message();
+        switch (command) {
+            case "add":
+                msg.setType(command);
+                msg.setTitle(titleReader());
+                //hang reader
+                break;
+            case "addlyrics":
+                msg.setType(command);
+                msg.setTitle(titleReader());
+                break;
+            case "play":
+                msg.setType(command);
+                msg.setTempo(tempoReader());
+                msg.setTransposition(tranpositionReader());
+                msg.setTitle(titleReader());
+                break;
+            case "change":
+                msg.setType(command);
+                msg.setSerial(serialReader());
+                msg.setTempo(tempoReader());
+                msg.setTransposition(tranpositionReader());
+                break;
+            case "stop":
+                msg.setType(command);
+                msg.setSerial(serialReader());
+                break;
+            case "exit":
+                break;
+            default:
+                System.out.println("There's no sich command."
+                        + "Available commands: add, addlyrics,"
+                        + "play, stop, change, exit");
+        }
+        return msg;
+    }
+    
+    private String titleReader(){
+        String title = "TITLE";
+        do{
+            System.out.println("Please enter a title");
+            title = sysIn.nextLine();
+        }while(title.equals("TITLE") || title.equals(""));
+        return title;
+    }
+    
+    private int tempoReader(){
+        int tempo = -1;
+        do{
+            System.out.println("Please enter a tempo");
+            tempo = sysIn.nextInt();
+        }while(tempo < 1);
+        return tempo;
+    }
+    
+    private int tranpositionReader(){
+        int transpoition = -1;
+        do{
+            System.out.println("Please enter a tranposition");
+            transpoition = sysIn.nextInt();
+        }while(transpoition < -100 || transpoition > 100);
+        return transpoition;
+    }
+    
+    private int serialReader(){
+        int serial = -1;
+        do{
+            System.out.println("Please enter a serial");
+            serial = sysIn.nextInt();
+        }while(serial < 0);
+        return serial;
+    }
 
     @Override
     public void close() throws Exception {
         out.close();
         in.close();
         me.close();
+        sysIn.close();
     }
 
     public static void main(String[] args) {
