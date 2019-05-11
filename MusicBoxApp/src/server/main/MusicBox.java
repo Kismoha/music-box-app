@@ -11,6 +11,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import server.connectionHandlers.ClientConnection;
 import server.connectionHandlers.ConnectionsManager;
+import server.storage.MusicStorage;
 
 /**
  *
@@ -23,10 +24,11 @@ public class MusicBox {
     public static void main(String[] args){
         
         ConnectionsManager mgr = new ConnectionsManager();
+        MusicStorage storage = new MusicStorage();
         
         try(ServerSocket server = new ServerSocket(PORT);){
             while(true){
-                ClientConnection conn = new ClientConnection(mgr,server.accept());
+                ClientConnection conn = new ClientConnection(mgr,storage,server.accept());
                 conn.startCommunication();
             }
         } catch (IOException ex) {

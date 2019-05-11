@@ -38,17 +38,18 @@ public class MusicBoxClient implements AutoCloseable {
         ///////////////////////////////////////////////////////
         toServer = new Thread(() -> {
             boolean running = true;
-            try{
+            try {
                 while (running) {
-                    
+
                     Message msg;
-                    do{
+                    do {
                         System.out.println("Command:");
                         msg = commandHandler(sysIn.next());
-                    }while(msg.getType().equals("TYPE"));
-                    
+                    } while (msg.getType().equals("TYPE"));
+
                     if (msg.getType().equals("exit")) {
                         running = false;
+                        toServer.interrupt();
                         break;
                     }
 
@@ -59,13 +60,12 @@ public class MusicBoxClient implements AutoCloseable {
                 }
             } catch (IOException ex) {
                 System.out.println("IOException while trying to write to server.");
-                ex.printStackTrace();
                 running = false;
             }
         });
         ///////////////////////////////////////////////////////
         ///////////////////// TOSERVER ////////////////////////
-        
+
         ////////////// FROMSERVER ////////////////////////
         //////////////////////////////////////////////////
         fromServer = new Thread(() -> {
@@ -106,14 +106,14 @@ public class MusicBoxClient implements AutoCloseable {
         out = new ObjectOutputStream(me.getOutputStream());
         in = new ObjectInputStream(me.getInputStream());
     }
-    
+
     private Message commandHandler(String command) {
         Message msg = new Message();
         switch (command) {
             case "add":
                 msg.setType(command);
                 msg.setTitle(titleReader());
-                //hang reader
+                msg.setSong(songReader());
                 break;
             case "addlyrics":
                 msg.setType(command);
@@ -136,48 +136,62 @@ public class MusicBoxClient implements AutoCloseable {
                 msg.setSerial(serialReader());
                 break;
             case "exit":
+                msg.setType(command);
                 break;
             default:
-                System.out.println("There's no sich command."
-                        + "Available commands: add, addlyrics,"
+                System.out.println("There's no such command. "
+                        + "Available commands: add, addlyrics, "
                         + "play, stop, change, exit");
         }
         return msg;
     }
-    
-    private String titleReader(){
+
+    private String songReader() {
+        String song = "SONG";
+        do {
+
+            System.out.println("Please enter the song");
+            System.out.println("Warning: There's no verification on the entered"
+                    + " song (yet), so it should be correct. Otherwise the"
+                    + " playing of the song will stop at the incorrect note!");
+            song = sysIn.nextLine();
+        } while (song.equals(""));
+        return song;
+    }
+
+    private String titleReader() {
         String title = "TITLE";
-        do{
+        do {
             System.out.println("Please enter a title");
-            title = sysIn.nextLine();
-        }while(title.equals("TITLE") || title.equals(""));
+            title = sysIn.next();
+        } while (title.equals("TITLE") || title.equals(""));
         return title;
     }
-    
-    private int tempoReader(){
+
+    private int tempoReader() {
         int tempo = -1;
-        do{
+        do {
             System.out.println("Please enter a tempo");
             tempo = sysIn.nextInt();
-        }while(tempo < 1);
+        } while (tempo < 1);
         return tempo;
     }
-    
-    private int tranpositionReader(){
+
+    private int tranpositionReader() {
         int transpoition = -1;
-        do{
+        do {
             System.out.println("Please enter a tranposition");
             transpoition = sysIn.nextInt();
-        }while(transpoition < -100 || transpoition > 100);
+        } while (transpoition < -100 || transpoition > 100);
         return transpoition;
     }
-    
-    private int serialReader(){
+
+    private int serialReader() {
         int serial = -1;
-        do{
+        do {
             System.out.println("Please enter a serial");
             serial = sysIn.nextInt();
-        }while(serial < 0);
+        } while (serial < 0);
         return serial;
     }
 

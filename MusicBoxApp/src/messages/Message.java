@@ -20,13 +20,16 @@ public class Message implements Serializable {
     private int tempo;
     private int transposition;
     private int serial;
+    private String song;
 
-    public Message(String type, String title, int tempo, int transposition, int serial) {
+    public Message(String type, String title, int tempo, int transposition,
+            int serial, String song) {
         this.type = type;
         this.title = title;
         this.tempo = tempo;
         this.transposition = transposition;
         this.serial = serial;
+        this.song = song;
     }
 
     public Message(Message msg) {
@@ -35,6 +38,7 @@ public class Message implements Serializable {
         this.tempo = msg.getTempo();
         this.transposition = msg.getTransposition();
         this.serial = msg.getSerial();
+        this.song = msg.getSong();
     }
     
     public Message() {
@@ -43,8 +47,10 @@ public class Message implements Serializable {
         this.tempo = -1;
         this.transposition = -1;
         this.serial = -1;
+        this.song = "SONG";
     }
 
+    @Override
     public String toString(){
         return type + " " + title + " " + tempo + " " + transposition + " " + serial;
     }
@@ -88,6 +94,12 @@ public class Message implements Serializable {
     public void setSerial(int serial) {
         this.serial = serial;
     }
-    
-    
+
+    public String getSong() {
+        return song;
+    }
+
+    public void setSong(String song) {
+        this.song = song;
+    }
 }

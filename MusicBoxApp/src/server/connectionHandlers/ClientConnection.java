@@ -11,6 +11,7 @@ import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.util.LinkedList;
 import messages.Message;
+import server.storage.MusicStorage;
 
 /**
  *
@@ -19,6 +20,7 @@ import messages.Message;
 public class ClientConnection implements AutoCloseable {
 
     private final ConnectionsManager mgr;
+    private final MusicStorage storage;
     private final Socket client;
     private final ObjectOutputStream out;
     private final ObjectInputStream in;
@@ -27,11 +29,12 @@ public class ClientConnection implements AutoCloseable {
     private Thread outgoing;
     private boolean isClientActive;
 
-    public ClientConnection(ConnectionsManager mgr, Socket client) throws IOException {
+    public ClientConnection(ConnectionsManager mgr, MusicStorage storage, Socket client) throws IOException {
         this.client = client;
         out = new ObjectOutputStream(this.client.getOutputStream());
         in = new ObjectInputStream(this.client.getInputStream());
         this.mgr = mgr;
+        this.storage = storage;
         this.mgr.addConn(this);
         messages = new LinkedList<>();
     }
