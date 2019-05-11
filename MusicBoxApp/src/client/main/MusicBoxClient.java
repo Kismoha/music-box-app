@@ -11,6 +11,7 @@ import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.util.Scanner;
 import messages.Command;
+import messages.Note;
 import server.main.MusicBox;
 
 /**
@@ -72,7 +73,7 @@ public class MusicBoxClient implements AutoCloseable {
             boolean running = true;
             while (running) {
                 try {
-                    Command msg = (Command) in.readObject();
+                    Note msg = (Note) in.readObject();
                     System.out.println(msg.toString());
                 } catch (IOException ex) {
                     System.out.println("IOException while reading from server");

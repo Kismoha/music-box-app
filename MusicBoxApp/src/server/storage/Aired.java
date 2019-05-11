@@ -14,14 +14,12 @@ public class Aired {
     private int storageIndex;
     private int tempo;
     private int transposition;
-    private Thread thread;
 
-    public Aired(int serial, int storageIndex, int tempo, int transposition, Thread thread) {
+    public Aired(int serial, int storageIndex, int tempo, int transposition) {
         this.serial = serial;
         this.storageIndex = storageIndex;
         this.tempo = tempo;
         this.transposition = transposition;
-        this.thread = thread;
     }
 
     public int getSerial() {
@@ -55,14 +53,4 @@ public class Aired {
     public void setTransposition(int transposition) {
         this.transposition = transposition;
     }
-
-    public Thread getThread() {
-        return thread;
-    }
-
-    public void setThread(Thread thread) {
-        this.thread = thread;
-    }
-    
-    
 }

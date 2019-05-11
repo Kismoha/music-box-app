@@ -24,21 +24,23 @@ public class Music {
     }
     
     public String getNote(int index){
-        String note = "FIN";
+        String note = "";
         try{
             note = notes.get(index);
         }catch(IndexOutOfBoundsException e){
             System.out.println("No note");
+            note = "FIN";
         }
         return note;
     }
     
     public String getSyllable(int index){
-        String syllable = "???";
+        String syllable = "";
         try{
             syllable = lyrics.get(index);
         }catch(IndexOutOfBoundsException e){
             System.out.println("No syllable");
+            syllable = "???";
         }
         return syllable;
     }
