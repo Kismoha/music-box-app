@@ -5,6 +5,7 @@
  */
 package server.storage;
 
+import java.util.Arrays;
 import java.util.LinkedList;
 
 /**
@@ -15,17 +16,36 @@ public class MusicStorage {
     
     public static int serialNumbering = 0;
     
-    private LinkedList<Music> storedMusic = new LinkedList<>();
-    private LinkedList<Aired> currentlyAiring = new LinkedList<>();
+    private final LinkedList<Music> storedMusic = new LinkedList<>();
+    private final LinkedList<Aired> currentlyAiring = new LinkedList<>();
     
     public synchronized void addMusic(Music music){
-        storedMusic.add(music);
+        boolean found = false;
+        for(Music m : storedMusic){
+            if(m.getTitle().equals(music.getTitle())){
+                storedMusic.remove(m);
+                storedMusic.add(music);
+                found = true;
+            }
+        }
+        if(!found){
+            storedMusic.add(music);
+        }
     }
     
-    public synchronized void playMusic(int index){
-        Aired airedMusic =  new Aired(serialNumbering,index, new Thread());
+    public synchronized void playMusic(int index, int tempo, int transposition){
+        Aired airedMusic =  new Aired(serialNumbering,index,tempo,
+        transposition, new Thread());
         increaseSerial();
         currentlyAiring.add(airedMusic);
+    }
+    
+    public synchronized void addLyrics(String title,String lyrics){
+        for(Music music : storedMusic){
+            if(music.getTitle().equals(title)){
+                music.setLyrics(Arrays.asList(lyrics.split(" ")));
+            }
+        }
     }
     
     public synchronized void stopMusic(int serial){

@@ -11,7 +11,7 @@ import java.io.Serializable;
  *
  * @author kismo
  */
-public class Message implements Serializable {
+public class Command implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
@@ -21,33 +21,37 @@ public class Message implements Serializable {
     private int transposition;
     private int serial;
     private String song;
+    private String lyrics;
 
-    public Message(String type, String title, int tempo, int transposition,
-            int serial, String song) {
+    public Command(String type, String title, int tempo, int transposition,
+            int serial, String song, String lyrics) {
         this.type = type;
         this.title = title;
         this.tempo = tempo;
         this.transposition = transposition;
         this.serial = serial;
         this.song = song;
+        this.lyrics = lyrics;
     }
 
-    public Message(Message msg) {
+    public Command(Command msg) {
         this.type = msg.getType();
         this.title = msg.getTitle();
         this.tempo = msg.getTempo();
         this.transposition = msg.getTransposition();
         this.serial = msg.getSerial();
         this.song = msg.getSong();
+        this.lyrics = msg.getLyrics();
     }
     
-    public Message() {
+    public Command() {
         this.type = "TYPE";
         this.title = "TITLE";
         this.tempo = -1;
         this.transposition = -1;
         this.serial = -1;
         this.song = "SONG";
+        this.lyrics = "LYRICS";
     }
 
     @Override
@@ -102,4 +106,14 @@ public class Message implements Serializable {
     public void setSong(String song) {
         this.song = song;
     }
+
+    public String getLyrics() {
+        return lyrics;
+    }
+
+    public void setLyrics(String lyrics) {
+        this.lyrics = lyrics;
+    }
+    
+    
 }

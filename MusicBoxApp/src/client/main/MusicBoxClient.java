@@ -10,7 +10,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.util.Scanner;
-import messages.Message;
+import messages.Command;
 import server.main.MusicBox;
 
 /**
@@ -41,7 +41,7 @@ public class MusicBoxClient implements AutoCloseable {
             try {
                 while (running) {
 
-                    Message msg;
+                    Command msg;
                     do {
                         System.out.println("Command:");
                         msg = commandHandler(sysIn.next());
@@ -72,7 +72,7 @@ public class MusicBoxClient implements AutoCloseable {
             boolean running = true;
             while (running) {
                 try {
-                    Message msg = (Message) in.readObject();
+                    Command msg = (Command) in.readObject();
                     System.out.println(msg.toString());
                 } catch (IOException ex) {
                     System.out.println("IOException while reading from server");
@@ -107,8 +107,8 @@ public class MusicBoxClient implements AutoCloseable {
         in = new ObjectInputStream(me.getInputStream());
     }
 
-    private Message commandHandler(String command) {
-        Message msg = new Message();
+    private Command commandHandler(String command) {
+        Command msg = new Command();
         switch (command) {
             case "add":
                 msg.setType(command);
@@ -118,6 +118,7 @@ public class MusicBoxClient implements AutoCloseable {
             case "addlyrics":
                 msg.setType(command);
                 msg.setTitle(titleReader());
+                msg.setLyrics(lyricsReader());
                 break;
             case "play":
                 msg.setType(command);
@@ -149,14 +150,25 @@ public class MusicBoxClient implements AutoCloseable {
     private String songReader() {
         String song = "SONG";
         do {
-
             System.out.println("Please enter the song");
             System.out.println("Warning: There's no verification on the entered"
-                    + " song (yet), so it should be correct. Otherwise the"
+                    + " song, so it should be correct. Otherwise the"
                     + " playing of the song will stop at the incorrect note!");
             song = sysIn.nextLine();
-        } while (song.equals(""));
+        } while (song.equals("") || song.equals("SONG"));
         return song;
+    }
+    
+    private String lyricsReader() {
+        String lyrics = "LYRICS";
+        do {
+            System.out.println("Please enter the lyrics");
+            System.out.println("Warning: There's no verification on the entered"
+                    + " lyrics, so it should be correct. Otherwise the"
+                    + " syllables might end up at the wrong note");
+            lyrics = sysIn.nextLine();
+        } while (lyrics.equals(""));
+        return lyrics;
     }
 
     private String titleReader() {

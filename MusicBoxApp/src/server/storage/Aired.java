@@ -12,11 +12,15 @@ package server.storage;
 public class Aired {
     private int serial;
     private int storageIndex;
+    private int tempo;
+    private int transposition;
     private Thread thread;
 
-    public Aired(int serial, int storageIndex, Thread thread) {
+    public Aired(int serial, int storageIndex, int tempo, int transposition, Thread thread) {
         this.serial = serial;
         this.storageIndex = storageIndex;
+        this.tempo = tempo;
+        this.transposition = transposition;
         this.thread = thread;
     }
 
@@ -34,6 +38,22 @@ public class Aired {
 
     public void setStorageIndex(int storageIndex) {
         this.storageIndex = storageIndex;
+    }
+
+    public int getTempo() {
+        return tempo;
+    }
+
+    public void setTempo(int tempo) {
+        this.tempo = tempo;
+    }
+
+    public int getTransposition() {
+        return transposition;
+    }
+
+    public void setTransposition(int transposition) {
+        this.transposition = transposition;
     }
 
     public Thread getThread() {

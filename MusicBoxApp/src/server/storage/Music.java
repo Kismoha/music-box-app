@@ -47,12 +47,10 @@ public class Music {
         return lyrics;
     }
 
-    public void setLyrics(ArrayList<String> lyrics) {
-        this.lyrics = lyrics;
+    public void setLyrics(List<String> lyrics) {
+        this.lyrics = new ArrayList<>(lyrics);
     }
     
-    
-
     public String getTitle() {
         return title;
     }

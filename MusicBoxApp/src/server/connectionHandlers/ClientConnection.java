@@ -9,8 +9,10 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
+import java.util.Arrays;
 import java.util.LinkedList;
-import messages.Message;
+import messages.Command;
+import server.storage.Music;
 import server.storage.MusicStorage;
 
 /**
@@ -24,7 +26,7 @@ public class ClientConnection implements AutoCloseable {
     private final Socket client;
     private final ObjectOutputStream out;
     private final ObjectInputStream in;
-    private final LinkedList<Message> messages;
+    private final LinkedList<Command> messages;
     private Thread incoming;
     private Thread outgoing;
     private boolean isClientActive;
@@ -44,9 +46,10 @@ public class ClientConnection implements AutoCloseable {
             isClientActive = true;
             boolean running = true;
             while (running) {
-                Message inMsg = new Message();
+                Command inMsg = new Command();
                 try {
-                    inMsg = (Message) in.readObject();
+                    inMsg = (Command) in.readObject();
+                    commandHandler(inMsg);
                 } catch (IOException ex) {
                     System.out.println("Communication problem");
                     running = false;
@@ -54,7 +57,7 @@ public class ClientConnection implements AutoCloseable {
                     System.out.println("Message problem");
                     running = false;
                 }
-                final Message outMsg = new Message(inMsg);
+                final Command outMsg = new Command(inMsg);
                 mgr.forEachConn((ClientConnection c) -> {
                     synchronized (c.messages) {
                         c.messages.add(outMsg);
@@ -108,6 +111,32 @@ public class ClientConnection implements AutoCloseable {
             System.out.println("out thread end");
         });
         outgoing.start();
+    }
+
+    private void commandHandler(Command command) {
+        switch (command.getType()) {
+            case "add":
+                storage.addMusic(new Music(command.getTitle(),
+                        Arrays.asList(command.getSong().split(" "))));
+                break;
+            case "addlyrics":
+                storage.addLyrics(command.getTitle(), command.getLyrics());
+                break;
+            case "play":
+                
+                break;
+            case "change":
+                
+                break;
+            case "stop":
+                
+                break;
+            case "exit":
+                
+                break;
+            default:
+                System.out.println("Command type error.");
+        }
     }
 
     @Override
