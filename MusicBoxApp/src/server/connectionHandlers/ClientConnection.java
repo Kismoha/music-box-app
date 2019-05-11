@@ -15,6 +15,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import messages.Command;
 import messages.Note;
+import client.main.OctaveCalculator;
 import server.storage.Music;
 import server.storage.MusicStorage;
 
@@ -33,6 +34,7 @@ public class ClientConnection implements AutoCloseable {
     private Thread incoming;
     private Thread player;
     private boolean isClientActive;
+    private OctaveCalculator midiCalc;
 
     public ClientConnection(ConnectionsManager mgr, MusicStorage storage, Socket client) throws IOException {
         this.client = client;
@@ -42,6 +44,7 @@ public class ClientConnection implements AutoCloseable {
         this.storage = storage;
         this.mgr.addConn(this);
         messages = new LinkedList<>();
+        midiCalc = new OctaveCalculator();
     }
 
     public void startCommunication() {
@@ -97,7 +100,12 @@ public class ClientConnection implements AutoCloseable {
                 int index = storage.getMusicIndexByTitle(command.getTitle());
                 int serial = storage.playMusic(index, command.getTempo(),
                         command.getTransposition());
-                System.out.println("PLAYING " + serial);
+                try {
+                    Note initNote = new Note("playing " + serial);
+                    out.writeObject(initNote);
+                    out.flush();
+                } catch (IOException e) {
+                }
                 player = new Thread(() -> {
                     int noteCounter = 0;
                     int syllableCounter = 0;
@@ -118,12 +126,19 @@ public class ClientConnection implements AutoCloseable {
                                 repeatFrom = Integer.parseInt(temp[0]);
                                 for (int i = repeat; i > 0; i--) {
                                     for (int j = repeatFrom; j > 0; j--) {
-                                        Note rep = storage.getNote(index,
+                                        properties = storage.getTempoAndTransposition(serial);
+                                        Note repNote = storage.getNote(index,
                                                 noteCounter - j * 2,
                                                 syllableCounter - j + 1);
-                                        out.writeObject(rep);
+                                        if (repNote.getNote().equals("R")) {
+                                            Thread.sleep(properties[0] * Integer.parseInt(repNote.getLength()));
+                                            continue;
+                                        }
+                                        repNote.setMidiValue(midiCalc.getMidiValue(repNote.getNote(), properties[1]));
+                                        repNote.setActualLength(properties[0] * Integer.parseInt(repNote.getLength()));
+                                        out.writeObject(repNote);
                                         out.flush();
-                                        Thread.sleep(properties[0] * Integer.parseInt(rep.getLength()));
+                                        Thread.sleep(properties[0] * Integer.parseInt(repNote.getLength()));
                                     }
                                 }
                                 noteCounter += 2;
@@ -132,6 +147,8 @@ public class ClientConnection implements AutoCloseable {
                                 Thread.sleep(properties[0] * Integer.parseInt(note.getLength()));
                                 noteCounter += 2;
                             } else {
+                                note.setMidiValue(midiCalc.getMidiValue(note.getNote(), properties[1]));
+                                note.setActualLength(properties[0] * Integer.parseInt(note.getLength()));
                                 out.writeObject(note);
                                 out.flush();
                                 Thread.sleep(properties[0] * Integer.parseInt(note.getLength()));

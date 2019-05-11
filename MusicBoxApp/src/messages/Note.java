@@ -14,8 +14,10 @@ import java.io.Serializable;
 public class Note implements Serializable {
     
     private String note;
+    private int midiValue;
     private String length;
     private String syllable;
+    private int actualLength;
 
     private static final long serialVersionUID = 1L;
 
@@ -35,6 +37,7 @@ public class Note implements Serializable {
         this.note = fin;
         this.syllable = "???";
         this.length = "0";
+        this.actualLength = 0;
     }
     
     @Override
@@ -68,4 +71,20 @@ public class Note implements Serializable {
         this.syllable = syllable;
     }
 
+    public int getMidiValue() {
+        return midiValue;
+    }
+
+    public void setMidiValue(int midiValue) {
+        this.midiValue = midiValue;
+    }
+
+    public int getActualLength() {
+        return actualLength;
+    }
+
+    public void setActualLength(int actualLength) {
+        this.actualLength = actualLength;
+    }
+    
 }

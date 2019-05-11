@@ -74,7 +74,13 @@ public class MusicBoxClient implements AutoCloseable {
             while (running) {
                 try {
                     Note msg = (Note) in.readObject();
-                    System.out.println(msg.toString());
+                    if (msg.getNote().contains("playing")) {
+                        System.out.println(msg.getNote());
+                    } else if (msg.getNote().equals("FIN")) {
+                        System.out.println("FIN");
+                    } else {
+                        System.out.println(msg.getNote() + " " + msg.getMidiValue() + " " + msg.getActualLength());
+                    }
                 } catch (IOException ex) {
                     System.out.println("IOException while reading from server");
                     running = false;
@@ -159,7 +165,7 @@ public class MusicBoxClient implements AutoCloseable {
         } while (song.equals("") || song.equals("SONG"));
         return song;
     }
-    
+
     private String lyricsReader() {
         String lyrics = "LYRICS";
         do {
