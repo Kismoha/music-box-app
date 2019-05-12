@@ -10,6 +10,11 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.util.Scanner;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.sound.midi.MidiChannel;
+import javax.sound.midi.MidiSystem;
+import javax.sound.midi.Synthesizer;
 import messages.Command;
 import messages.Note;
 import server.main.MusicBox;
@@ -26,11 +31,16 @@ public class MusicBoxClient implements AutoCloseable {
     private final Scanner sysIn;
     private Thread toServer;
     private Thread fromServer;
+    private MidiChannel instrument;
+    private Synthesizer synt;
 
     public MusicBoxClient() throws IOException, InterruptedException, Exception {
         sysIn = new Scanner(System.in);
         createSocket();
         createStreams();
+        synt = MidiSystem.getSynthesizer();
+        synt.open();
+        instrument = synt.getChannels()[0];
         start();
     }
 
@@ -71,6 +81,7 @@ public class MusicBoxClient implements AutoCloseable {
         //////////////////////////////////////////////////
         fromServer = new Thread(() -> {
             boolean running = true;
+            int prevNote = -1;
             while (running) {
                 try {
                     Note msg = (Note) in.readObject();
@@ -79,7 +90,14 @@ public class MusicBoxClient implements AutoCloseable {
                     } else if (msg.getNote().equals("FIN")) {
                         System.out.println("FIN");
                     } else {
-                        System.out.println(msg.getNote() + " " + msg.getMidiValue() + " " + msg.getActualLength());
+                        System.out.println(msg.getNote() + " " + msg.getSyllable());
+                        try {
+                            instrument.noteOff(prevNote);
+                        } catch (NullPointerException e) {
+
+                        }
+                        instrument.noteOn(msg.getMidiValue(), msg.getActualLength());
+                        prevNote = msg.getMidiValue();
                     }
                 } catch (IOException ex) {
                     System.out.println("IOException while reading from server");
