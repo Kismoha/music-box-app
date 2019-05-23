@@ -16,6 +16,9 @@ import java.util.logging.Logger;
 import messages.Command;
 import messages.Note;
 import client.main.OctaveCalculator;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import server.storage.Music;
 import server.storage.MusicStorage;
 
@@ -28,18 +31,18 @@ public class ClientConnection implements AutoCloseable {
     private final ConnectionsManager mgr;
     private final MusicStorage storage;
     private final Socket client;
-    private final ObjectOutputStream out;
-    private final ObjectInputStream in;
+    private final PrintWriter out;
+    private final BufferedReader in;
     private final LinkedList<Command> messages;
     private Thread incoming;
     private Thread player;
     private boolean isClientActive;
-    private OctaveCalculator midiCalc;
+    private final OctaveCalculator midiCalc;
 
     public ClientConnection(ConnectionsManager mgr, MusicStorage storage, Socket client) throws IOException {
         this.client = client;
-        out = new ObjectOutputStream(this.client.getOutputStream());
-        in = new ObjectInputStream(this.client.getInputStream());
+        out = new PrintWriter(this.client.getOutputStream());
+        in = new BufferedReader(new InputStreamReader(this.client.getInputStream()));
         this.mgr = mgr;
         this.storage = storage;
         this.mgr.addConn(this);
@@ -53,13 +56,12 @@ public class ClientConnection implements AutoCloseable {
             boolean running = true;
             while (running) {
                 try {
-                    Command inMsg = (Command) in.readObject();
+                    String asd = in.readLine();
+                    System.out.println(asd);
+                    Command inMsg = new Command(asd);
                     commandHandler(inMsg);
                 } catch (IOException ex) {
                     System.out.println("Communication problem");
-                    running = false;
-                } catch (ClassNotFoundException ex) {
-                    System.out.println("Message problem");
                     running = false;
                 }
             }
@@ -100,12 +102,10 @@ public class ClientConnection implements AutoCloseable {
                 int index = storage.getMusicIndexByTitle(command.getTitle());
                 int serial = storage.playMusic(index, command.getTempo(),
                         command.getTransposition());
-                try {
-                    Note initNote = new Note("playing " + serial);
-                    out.writeObject(initNote);
-                    out.flush();
-                } catch (IOException e) {
-                }
+                //Playing serial message
+                //Note initNote = new Note("playing " + serial);
+                out.println("playing " + serial);
+                out.flush();
                 player = new Thread(() -> {
                     int noteCounter = 0;
                     int syllableCounter = 0;
@@ -115,8 +115,6 @@ public class ClientConnection implements AutoCloseable {
                             Note note = storage.getNote(index, noteCounter,
                                     syllableCounter);
                             if (note.getNote().equals("FIN")) {
-                                out.writeObject(note);
-                                out.flush();
                                 break;
                             } else if (note.getNote().equals("REP")) {
                                 int repeat = 0;
@@ -136,7 +134,7 @@ public class ClientConnection implements AutoCloseable {
                                         }
                                         repNote.setMidiValue(midiCalc.getMidiValue(repNote.getNote(), properties[1]));
                                         repNote.setActualLength(properties[0] * Integer.parseInt(repNote.getLength()));
-                                        out.writeObject(repNote);
+                                        out.println(repNote.getDataToConvert());
                                         out.flush();
                                         Thread.sleep(properties[0] * Integer.parseInt(repNote.getLength()));
                                     }
@@ -149,29 +147,22 @@ public class ClientConnection implements AutoCloseable {
                             } else {
                                 note.setMidiValue(midiCalc.getMidiValue(note.getNote(), properties[1]));
                                 note.setActualLength(properties[0] * Integer.parseInt(note.getLength()));
-                                out.writeObject(note);
+                                out.println(note.getDataToConvert());
                                 out.flush();
                                 Thread.sleep(properties[0] * Integer.parseInt(note.getLength()));
                                 noteCounter += 2;
                                 syllableCounter++;
                             }
 
-                        } catch (IOException ex) {
-                            System.out.println("Exception while trying to write to client");
-                            isClientActive = false;
                         } catch (InterruptedException e) {
                             System.out.println("Exception while trying to write to client");
                             isClientActive = false;
-                            try {
-                                out.writeObject(new Note("FIN"));
-                                out.flush();
-                            } catch (IOException ex) {
-                                Logger.getLogger(ClientConnection.class.getName()).log(Level.SEVERE, null, ex);
-                                isClientActive = false;
-                            }
+                            out.flush();
                         }
                     }
                     storage.stopMusic(serial);
+                    out.println(new Note(false,"FIN").getDataToConvert());
+                    out.flush();
                     System.out.println("out thread end");
                 });
                 player.start();
@@ -181,16 +172,12 @@ public class ClientConnection implements AutoCloseable {
                         command.getTempo(), command.getTransposition());
                 break;
             case "stop":
-                if (player.isAlive()) {
+                /*if (player.isAlive()) {
                     player.interrupt();
-                    try {
-                        out.writeObject(new Note("FIN"));
-                        out.flush();
-                    } catch (IOException ex) {
-                        Logger.getLogger(ClientConnection.class.getName()).log(Level.SEVERE, null, ex);
-                        isClientActive = false;
-                    }
-                }
+                    out.println(new Note(false,"FIN").getDataToConvert());
+                    out.flush();
+                }*/
+                storage.stopMusic(command.getSerial());
                 break;
             case "exit":
 

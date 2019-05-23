@@ -20,6 +20,8 @@ public class MusicStorage {
 
     private final LinkedList<Music> storedMusic = new LinkedList<>();
     private final LinkedList<Aired> currentlyAiring = new LinkedList<>();
+    
+    private final Object serialNumberingLock = new Object();
 
     public void addMusic(Music music) {
         boolean found = false;
@@ -62,7 +64,7 @@ public class MusicStorage {
         }
         return stuff;
     }
-    
+
     public void changeTempoAndTransposition(int serial, int tempo, int transposition) {
         synchronized (currentlyAiring) {
             for (Aired a : currentlyAiring) {
@@ -75,18 +77,20 @@ public class MusicStorage {
     }
 
     public synchronized Note getNote(int index, int note, int syllable) {
-        Note temp = new Note("FIN");
-        try {
-            temp.setNote(storedMusic.get(index).getNote(note));
-        } catch (IndexOutOfBoundsException e) {
-        }
-        try {
-            temp.setSyllable(storedMusic.get(index).getSyllable(syllable));
-        } catch (IndexOutOfBoundsException e) {
-        }
-        try {
-            temp.setLength(storedMusic.get(index).getNote(note + 1));
-        } catch (IndexOutOfBoundsException e) {
+        Note temp = new Note(false, "FIN");
+        synchronized (storedMusic) {
+            try {
+                temp.setNote(storedMusic.get(index).getNote(note));
+            } catch (IndexOutOfBoundsException e) {
+            }
+            try {
+                temp.setSyllable(storedMusic.get(index).getSyllable(syllable));
+            } catch (IndexOutOfBoundsException e) {
+            }
+            try {
+                temp.setLength(storedMusic.get(index).getNote(note + 1));
+            } catch (IndexOutOfBoundsException e) {
+            }
         }
         return temp;
     }
@@ -104,11 +108,18 @@ public class MusicStorage {
     }
 
     public synchronized int playMusic(int index, int tempo, int transposition) {
-        Aired airedMusic = new Aired(serialNumbering, index, tempo,
+        Aired airedMusic;
+        synchronized(serialNumberingLock){
+            airedMusic = new Aired(serialNumbering, index, tempo,
                 transposition);
+        }
         increaseSerial();
-        currentlyAiring.add(airedMusic);
-        return --serialNumbering;
+        synchronized (currentlyAiring){
+            currentlyAiring.add(airedMusic);
+        }
+        synchronized(serialNumberingLock){
+            return --serialNumbering;
+        }
     }
 
     public void stopMusic(int serial) {
@@ -132,6 +143,8 @@ public class MusicStorage {
     }
 
     private synchronized void increaseSerial() {
-        serialNumbering++;
+        synchronized (serialNumberingLock){
+            serialNumbering++;
+        }
     }
 }

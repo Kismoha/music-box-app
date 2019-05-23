@@ -43,22 +43,38 @@ public class Command implements Serializable {
         this.song = msg.getSong();
         this.lyrics = msg.getLyrics();
     }
-    
+
     public Command() {
         this.type = "TYPE";
         this.title = "TITLE";
         this.tempo = -1;
         this.transposition = -1;
         this.serial = -1;
-        this.song = "SONG";
-        this.lyrics = "LYRICS";
+        this.song = "x";
+        this.lyrics = "x";
+    }
+    
+    public Command(String dataToConvert){
+        String[] tmp = dataToConvert.split("_");
+        this.type = tmp[0];
+        this.title = tmp[1];
+        this.tempo = Integer.parseInt(tmp[2]);
+        this.transposition = Integer.parseInt(tmp[3]);
+        this.serial = Integer.parseInt(tmp[4]);
+        this.song = tmp[5];
+        this.lyrics = tmp[6];
     }
 
     @Override
-    public String toString(){
+    public String toString() {
         return type + " " + title + " " + tempo + " " + transposition + " " + serial;
     }
-    
+
+    public String getConvertFormat() {
+        return type + "_" + title + "_" + tempo + "_" + transposition
+                + "_" + serial + "_" + song + "_" + lyrics;
+    }
+
     public String getType() {
         return type;
     }
@@ -114,6 +130,5 @@ public class Command implements Serializable {
     public void setLyrics(String lyrics) {
         this.lyrics = lyrics;
     }
-    
-    
+
 }

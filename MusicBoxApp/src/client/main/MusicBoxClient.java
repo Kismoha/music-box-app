@@ -5,9 +5,12 @@
  */
 package client.main;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.Scanner;
 import java.util.logging.Level;
@@ -26,8 +29,8 @@ import server.main.MusicBox;
 public class MusicBoxClient implements AutoCloseable {
 
     private Socket me;
-    private ObjectOutputStream out;
-    private ObjectInputStream in;
+    private PrintWriter out;
+    private BufferedReader in;
     private final Scanner sysIn;
     private Thread toServer;
     private Thread fromServer;
@@ -49,29 +52,24 @@ public class MusicBoxClient implements AutoCloseable {
         ///////////////////////////////////////////////////////
         toServer = new Thread(() -> {
             boolean running = true;
-            try {
-                while (running) {
 
-                    Command msg;
-                    do {
-                        System.out.println("Command:");
-                        msg = commandHandler(sysIn.next());
-                    } while (msg.getType().equals("TYPE"));
+            while (running) {
+                Command msg;
+                do {
+                    System.out.println("Command:");
+                    msg = commandHandler(sysIn.nextLine());
+                } while (msg.getType().equals("TYPE"));
 
-                    if (msg.getType().equals("exit")) {
-                        running = false;
-                        toServer.interrupt();
-                        break;
-                    }
-
-                    out.writeObject(msg);
-                    out.flush();
-
-                    System.out.println("Message sent.");
+                if (msg.getType().equals("exit")) {
+                    running = false;
+                    toServer.interrupt();
+                    break;
                 }
-            } catch (IOException ex) {
-                System.out.println("IOException while trying to write to server.");
-                running = false;
+
+                out.println(msg.getConvertFormat());
+                out.flush();
+
+                System.out.println("Message sent.");
             }
         });
         ///////////////////////////////////////////////////////
@@ -84,28 +82,24 @@ public class MusicBoxClient implements AutoCloseable {
             int prevNote = -1;
             while (running) {
                 try {
-                    Note msg = (Note) in.readObject();
+                    Note msg = new Note(true,in.readLine());
                     if (msg.getNote().contains("playing")) {
                         System.out.println(msg.getNote());
                     } else if (msg.getNote().equals("FIN")) {
                         System.out.println("FIN");
                     } else {
-                        System.out.println(msg.getNote() + " " + msg.getSyllable());
+                        System.out.println(msg.getSyllable());
                         try {
                             instrument.noteOff(prevNote);
                         } catch (NullPointerException e) {
 
                         }
+                        System.out.println(msg.getMidiValue());
                         instrument.noteOn(msg.getMidiValue(), msg.getActualLength());
                         prevNote = msg.getMidiValue();
                     }
                 } catch (IOException ex) {
                     System.out.println("IOException while reading from server");
-                    running = false;
-                    toServer.interrupt();
-                } catch (ClassNotFoundException ex) {
-                    System.out.println("ClassNotFoundException"
-                            + "while reading from server");
                     running = false;
                     toServer.interrupt();
                 }
@@ -128,8 +122,8 @@ public class MusicBoxClient implements AutoCloseable {
     }
 
     private void createStreams() throws IOException {
-        out = new ObjectOutputStream(me.getOutputStream());
-        in = new ObjectInputStream(me.getInputStream());
+        out = new PrintWriter(me.getOutputStream());
+        in = new BufferedReader(new InputStreamReader(me.getInputStream()));
     }
 
     private Command commandHandler(String command) {
@@ -176,9 +170,6 @@ public class MusicBoxClient implements AutoCloseable {
         String song = "SONG";
         do {
             System.out.println("Please enter the song");
-            System.out.println("Warning: There's no verification on the entered"
-                    + " song, so it should be correct. Otherwise the"
-                    + " playing of the song will stop at the incorrect note!");
             song = sysIn.nextLine();
         } while (song.equals("") || song.equals("SONG"));
         return song;
@@ -188,9 +179,6 @@ public class MusicBoxClient implements AutoCloseable {
         String lyrics = "LYRICS";
         do {
             System.out.println("Please enter the lyrics");
-            System.out.println("Warning: There's no verification on the entered"
-                    + " lyrics, so it should be correct. Otherwise the"
-                    + " syllables might end up at the wrong note");
             lyrics = sysIn.nextLine();
         } while (lyrics.equals(""));
         return lyrics;
@@ -200,7 +188,7 @@ public class MusicBoxClient implements AutoCloseable {
         String title = "TITLE";
         do {
             System.out.println("Please enter a title");
-            title = sysIn.next();
+            title = sysIn.nextLine();
         } while (title.equals("TITLE") || title.equals(""));
         return title;
     }
